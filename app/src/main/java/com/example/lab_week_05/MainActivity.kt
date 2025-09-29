@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getCatImageResponse() {
-        val call = catApiService.searchImages(1, "full")
+        val call = catApiService.searchImages(1, "full",1)
         call.enqueue(object: Callback<List<ImageData>> {
             override fun onFailure(call: Call<List<ImageData>>, t: Throwable) {
                 Log.e(MAIN_ACTIVITY, "Failed to get response", t)
@@ -59,14 +59,20 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call<List<ImageData>>, response:
             Response<List<ImageData>>) {
                 if(response.isSuccessful){
-                    val image = response.body()
-                    val firstImage = image?.firstOrNull()?.imageUrl.orEmpty()
-                    if (firstImage.isNotBlank()) {
-                        imageLoader.loadImage(firstImage, imageResultView)
+                    val images = response.body()
+                    val firstImage = images?.firstOrNull()
+
+                    if (firstImage != null) {
+                        val breedName = firstImage.breeds?.firstOrNull()?.name ?: "Unknown"
+                        val imageUrl = firstImage.imageUrl
+                        if (imageUrl.isNotBlank()) {
+                            imageLoader.loadImage(imageUrl, imageResultView)
+                        }
+                        apiResponseView.text = getString(R.string.breed_placeholder, breedName)
                     } else {
-                        Log.d(MAIN_ACTIVITY, "Missing image URL")
+                        apiResponseView.text = "No image data found"
+                        Log.d(MAIN_ACTIVITY, "No image data in response")
                     }
-                    apiResponseView.text = getString(R.string.image_placeholder,firstImage)
                 }
                 else{
                     Log.e(MAIN_ACTIVITY, "Failed to get response\n" +
